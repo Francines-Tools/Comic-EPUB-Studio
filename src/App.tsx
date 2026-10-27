@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { ThemeToggle } from './components/ThemeToggle';
+import { AppLogo } from './components/AppLogo';
 import { SettingsPanel } from './components/SettingsPanel';
 import { DropZone } from './components/DropZone';
 import { QueueItemCard } from './components/QueueItemCard';
@@ -368,11 +369,7 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-8">
           {/* Zone 1: Single text element wordmark */}
           <div className="flex items-center gap-2.5 whitespace-nowrap shrink-0">
-            <img
-              src="/favicon.svg"
-              alt="Comic to EPUB Studio logo"
-              className="h-8 w-8 rounded-lg shadow-xs shrink-0"
-            />
+            <AppLogo className="h-8 w-8 rounded-lg shadow-xs shrink-0" />
             <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Comic to EPUB Studio
             </span>

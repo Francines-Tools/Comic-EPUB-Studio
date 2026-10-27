@@ -8,20 +8,22 @@
     <meta property="og:title" content="Comic to EPUB Studio" />
     <meta property="og:description" content="Convert CBZ and CBR comic archives to EPUB 3 with cover extraction, custom reader layout, dark mode, and batch folder export." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image" content="./pwa-512x512.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="/pwa-512x512.png" />
+    <meta name="twitter:image" content="./pwa-512x512.png" />
     <meta name="theme-color" content="#4f46e5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Comic to EPUB" />
 
-    <!-- Icons -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <!-- Icons & Manifest (Resilient relative paths + embedded SVG data URI for GitHub Pages) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmdHcmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzFlMjkzYiIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMGYxNzJhIiAvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY29taWNHcmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzM4YmRmOCIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiM2MzY2ZjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2E4NTVmNyIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImVwdWJHcmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjY2JkNWUxIiAvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iY3VybEdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjODE4Y2Y4IiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM0ZjQ2ZTUiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZ2xvdyIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSI+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIxMiIgc3RkRGV2aWF0aW9uPSIxNiIgZmxvb2QtY29sb3I9IiM0ZjQ2ZTUiIGZsb29kLW9wYWNpdHk9IjAuMzUiIC8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHJlY3QgeD0iMjQiIHk9IjI0IiB3aWR0aD0iNDY0IiBoZWlnaHQ9IjQ2NCIgcng9IjEwNCIgZmlsbD0idXJsKCNiZ0dyYWQpIiBzdHJva2U9IiMzMzQxNTUiIHN0cm9rZS13aWR0aD0iNiIgLz4KICA8ZyBmaWx0ZXI9InVybCgjZ2xvdykiPgogICAgPHBhdGggZD0iTTEyMCAzODAgQzE4MCAzNzAgMjQwIDM3NiAyNTYgMzkyIEMyNzIgMzc2IDMzMiAzNzAgMzkyIDM4MCBMMzkyIDEzMCBDMzMyIDEyMCAyNzIgMTI2IDI1NiAxNDIgQzI0MCAxMjYgMTgwIDEyMCAxMjAgMTMwIFoiIGZpbGw9IiMxZTFiNGIiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiAvPgogICAgPHBhdGggZD0iTTI1NiAxNDIgQzI3MiAxMjYgMzMyIDEyMCAzOTIgMTMwIEwzOTIgMzgwIEMzMzIgMzcwIDI3MiAzNzYgMjU2IDM5MiBaIiBmaWxsPSJ1cmwoI2VwdWJHcmFkKSIgLz4KICAgIDxyZWN0IHg9IjI4MiIgeT0iMTY2IiB3aWR0aD0iODYiIGhlaWdodD0iNTIiIHJ4PSI2IiBmaWxsPSIjNjM2NmYxIiBmaWxsLW9wYWNpdHk9IjAuODUiIC8+CiAgICA8bGluZSB4MT0iMjgyIiB5MT0iMjM2IiB4Mj0iMzY4IiB5Mj0iMjM2IiBzdHJva2U9IiM0NzU1NjkiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiAvPgogICAgPGxpbmUgeDE9IjI4MiIgeTE9IjI1OCIgeDI9IjM2OCIgeTI9IjI1OCIgc3Ryb2tlPSIjNDc1NTY5IiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgLz4KICAgIDxsaW5lIHgxPSIyODIiIHkxPSIyODAiIHgyPSIzNTIiIHkyPSIyODAiIHN0cm9rZT0iIzQ3NTU2OSIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIC8+CiAgICA8bGluZSB4MT0iMjgyIiB5MT0iMzAyIiB4Mj0iMzY4IiB5Mj0iMzAyIiBzdHJva2U9IiM0NzU1NjkiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiAvPgogICAgPHBhdGggZD0iTTMzNiAzMzYgTDM0OCAzMjQgTDM2MCAzMzYgTDM0OCAzNDggWiIgZmlsbD0iIzYzNjZmMSIgLz4KICAgIDxjaXJjbGUgY3g9IjM0OCIgY3k9IjMzNiIgcj0iMyIgZmlsbD0iI2ZmZmZmZiIgLz4KICAgIDxwYXRoIGQ9Ik0yNTYgMTQyIEMyNDAgMTI2IDE4MCAxMjAgMTIwIDEzMCBMMTIwIDM4MCBDMTgwIDM3MCAyNDAgMzc2IDI1NiAzOTIgWiIgZmlsbD0idXJsKCNjb21pY0dyYWQpIiAvPgogICAgPHJlY3QgeD0iMTQyIiB5PSIxNTYiIHdpZHRoPSI0NiIgaGVpZ2h0PSI4OCIgcng9IjQiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC40IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMyIgLz4KICAgIDxyZWN0IHg9IjE5NCIgeT0iMTU2IiB3aWR0aD0iNDYiIGhlaWdodD0iNDAiIHJ4PSI0IiBmaWxsPSIjMGYxNzJhIiBmaWxsLW9wYWNpdHk9IjAuNCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMiIC8+CiAgICA8cmVjdCB4PSIxOTQiIHk9IjIwMiIgd2lkdGg9IjQ2IiBoZWlnaHQ9IjQyIiByeD0iNCIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjQiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzIiAvPgogICAgPHJlY3QgeD0iMTQyIiB5PSIyNTIiIHdpZHRoPSI5OCIgaGVpZ2h0PSI5MiIgcng9IjQiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC40IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMyIgLz4KICAgIDxwYXRoIGQ9Ik0xOTEgMjk4IEwyMDMgMjg2IEwxOTcgMzAyIEwyMTIgMzAwIEwxOTggMzEwIEwyMDYgMzIyIEwxOTMgMzEzIEwxODUgMzI1IEwxODcgMzExIEwxNzIgMzEwIEwxODYgMzAxIEwxNzggMjg4IFoiIGZpbGw9IiNmYmJmMjQiIHN0cm9rZT0iI2Q5NzcwNiIgc3Ryb2tlLXdpZHRoPSIyIiAvPgogICAgPHBhdGggZD0iTTEyMCAzODAgQzE0NSAzNTAgMTcwIDM0MCAyMTAgMzQ1IEMxODUgMzc1IDE1NSAzODUgMTIwIDM4MCBaIiBmaWxsPSJ1cmwoI2N1cmxHcmFkKSIgc3Ryb2tlPSIjYzdkMmZlIiBzdHJva2Utd2lkdGg9IjMiIC8+CiAgPC9nPgogIDxlbGxpcHNlIGN4PSIyNTYiIGN5PSIzOTIiIHJ4PSIxNCIgcnk9IjciIGZpbGw9IiMzOGJkZjgiIC8+Cjwvc3ZnPg==" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +34,16 @@
   <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased font-sans transition-colors duration-200">
     <div id="root">
       <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 2rem; color: #64748b; background-color: #0f172a;">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📚</div>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 56px; height: 56px; margin-bottom: 1rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+          <rect x="24" y="24" width="464" height="464" rx="104" fill="#1e293b" stroke="#334155" stroke-width="6" />
+          <path d="M120 380 C180 370 240 376 256 392 C272 376 332 370 392 380 L392 130 C332 120 272 126 256 142 C240 126 180 120 120 130 Z" fill="#1e1b4b" stroke="#6366f1" stroke-width="8" stroke-linejoin="round" />
+          <path d="M256 142 C272 126 332 120 392 130 L392 380 C332 370 272 376 256 392 Z" fill="#cbd5e1" />
+          <rect x="282" y="166" width="86" height="52" rx="6" fill="#6366f1" />
+          <line x1="282" y1="236" x2="368" y2="236" stroke="#475569" stroke-width="8" stroke-linecap="round" />
+          <line x1="282" y1="258" x2="368" y2="258" stroke="#475569" stroke-width="8" stroke-linecap="round" />
+          <path d="M256 142 C240 126 180 120 120 130 L120 380 C180 370 240 376 256 392 Z" fill="#6366f1" />
+          <path d="M191 298 L203 286 L197 302 L212 300 L198 310 L206 322 L193 313 L185 325 L187 311 L172 310 L186 301 L178 288 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+        </svg>
         <div style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.5rem;">Comic to EPUB Studio</div>
         <p style="font-size: 0.9rem; color: #94a3b8; max-width: 420px; line-height: 1.5;">Loading converter application...</p>
         <noscript>
