@@ -1,0 +1,6 @@
+{
+  "name": "Comic to EPUB Studio",
+  "description": "Convert CBZ and CBR comic archives to EPUB 3 with cover extraction, custom reader layout, dark mode, and batch folder export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

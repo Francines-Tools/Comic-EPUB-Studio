@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comic to EPUB Studio</title>
+    <meta name="description" content="Convert CBZ and CBR comic archives to EPUB 3 with cover extraction, custom reader layout, dark mode, and batch folder export." />
+    <meta property="og:title" content="Comic to EPUB Studio" />
+    <meta property="og:description" content="Convert CBZ and CBR comic archives to EPUB 3 with cover extraction, custom reader layout, dark mode, and batch folder export." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Browser-side Archive Decompression for RAR/CBR -->
+    <script src="https://xenova.github.io/unarchiver.js/dist/unarchiver.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased font-sans transition-colors duration-200">
+    <div id="root">
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 2rem; color: #64748b; background-color: #0f172a;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📚</div>
+        <div style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.5rem;">Comic to EPUB Studio</div>
+        <p style="font-size: 0.9rem; color: #94a3b8; max-width: 420px; line-height: 1.5;">Loading converter application...</p>
+        <noscript>
+          <p style="color: #ef4444; margin-top: 1rem; font-weight: 600;">JavaScript is required to run this converter. Please enable JavaScript in your browser settings.</p>
+        </noscript>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

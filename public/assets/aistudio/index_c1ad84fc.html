@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comic Book to EPUB Converter (CBZ & CBR to EPUB 3)</title>
+  <meta name="description" content="Convert CBZ and CBR comics to EPUB 3 with cover image extraction, dark mode, smart metadata guessing, and batch target folder export." />
+
+  <!-- External CDNs for Browser-side Archive Processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://xenova.github.io/unarchiver.js/dist/unarchiver.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --border-subtle: #1e293b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: #090d16;
+      --success: #10b981;
+      --success-hover: #059669;
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --accent: #0284c7;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --input-bg: #ffffff;
+      --success: #059669;
+      --success-hover: #047857;
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* Top bar */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand-title span.logo-icon {
+      font-size: 1.3rem;
+    }
+
+    /* Dark Mode Toggle Switch */
+    .theme-switch-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .theme-switch-btn:hover {
+      border-color: var(--primary);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a5b4fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    [data-theme="light"] h1 {
+      background: linear-gradient(135deg, #4338ca, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* Options Panel */
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-badge {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    select, input[type="text"], textarea {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    select:focus, input[type="text"]:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
+    /* Drop Zone */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 2.25rem 1.5rem;
+      text-align: center;
+      background: var(--card-bg);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 1.5rem;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+    .dropzone svg {
+      width: 44px;
+      height: 44px;
+      fill: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Action Buttons */
+    .actions-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .actions-left, .actions-right {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    button.btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    button.btn:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+    button.btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.btn-folder {
+      background: var(--success);
+    }
+    button.btn-folder:hover:not(:disabled) {
+      background: var(--success-hover);
+    }
+
+    button.btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    button.btn-secondary:hover:not(:disabled) {
+      background: var(--border-subtle);
+    }
+
+    /* Queue Container */
+    .queue-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .queue-header {
+      padding: 0.9rem 1.25rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    .queue-list {
+      list-style: none;
+    }
+    .queue-item {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .queue-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Thumbnail Box */
+    .cover-thumb-container {
+      width: 52px;
+      height: 72px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--border);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .cover-thumb-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .cover-badge {
+      position: absolute;
+      bottom: 0;
+      inset-x: 0;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      font-size: 8px;
+      text-align: center;
+      padding: 1px 0;
+      font-weight: bold;
+    }
+
+    .item-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      gap: 0.5rem;
+    }
+    .file-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Meta Prompt Link / Buttons */
+    .meta-prompt-btn {
+      background: transparent;
+      border: none;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0;
+      text-align: left;
+    }
+    .meta-prompt-btn.guessed {
+      color: var(--warning);
+      font-weight: 600;
+    }
+    .meta-prompt-btn.customized {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .meta-prompt-btn.detected {
+      color: var(--text-muted);
+    }
+    .meta-prompt-btn:hover {
+      text-decoration: underline;
+    }
+
+    .status-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-queued { background: var(--border); color: var(--text-muted); }
+    .status-processing { background: #0284c7; color: #e0f2fe; }
+    .status-done { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .status-error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 0.25rem;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    .btn-download {
+      background: var(--success);
+      color: white;
+      border: none;
+      padding: 0.35rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      white-space: nowrap;
+    }
+    .btn-download:hover { opacity: 0.9; }
+
+    .btn-icon-action {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 0.35rem 0.5rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .btn-icon-action:hover {
+      color: var(--text);
+      border-color: var(--primary);
+    }
+
+    .empty-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Notification Banner */
+    .toast-banner {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Modal Overlay & Card */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 620px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-close-btn:hover { color: var(--text); }
+
+    .modal-body {
+      padding: 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .modal-footer {
+      padding: 0.9rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: var(--input-bg);
+    }
+
+    .meta-banner {
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    .meta-banner.warning {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning);
+      color: var(--text);
+    }
+    .meta-banner.info {
+      background: rgba(99,102,241,0.1);
+      border: 1px solid var(--primary);
+      color: var(--text);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .label-with-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+    .btn-copy-field {
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .bulk-copy-box {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Top Navigation with 🔆🌙 Dark Mode Switch -->
+  <div class="top-nav">
+    <div class="brand-title">
+      <span class="logo-icon">📚</span>
+      <span>Comic to EPUB Converter</span>
+    </div>
+
+    <!-- 🔆🌙 Dark Mode Toggle Switch -->
+    <button class="theme-switch-btn" id="btn-theme" type="button" aria-label="Toggle dark and light mode">
+      <span id="theme-icon">🔆</span>
+      <span id="theme-text">Light Mode</span>
+    </button>
+  </div>
+
+  <header>
+    <h1>Comic Book to EPUB 3 Converter</h1>
+    <p class="subtitle">Convert CBZ & CBR comics directly in your browser. Extracts cover artwork for bookshelf thumbnails, offers smart metadata editing with bulk copy, and saves directly to your target folder.</p>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="toast-banner" class="toast-banner" style="display: none;">
+    <span id="toast-msg"></span>
+    <button onclick="document.getElementById('toast-banner').style.display='none'" style="background:none;border:none;color:inherit;cursor:pointer;font-weight:bold;">✕</button>
+  </div>
+
+  <!-- Conversion Options -->
+  <div class="panel">
+    <div class="panel-title">
+      <span>Conversion Settings</span>
+      <span class="panel-badge">EPUB 3 Standard with Embedded Cover Metadata</span>
+    </div>
+    <div class="options-grid">
+      <div class="form-group">
+        <label for="opt-direction">Reading Direction</label>
+        <select id="opt-direction">
+          <option value="auto" selected>Auto-detect (from ComicInfo.xml or Manga title)</option>
+          <option value="ltr">Left-to-Right (Western Comics)</option>
+          <option value="rtl">Right-to-Left (Manga / Manhwa)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="opt-layout">Layout Mode</label>
+        <select id="opt-layout">
+          <option value="pre-paginated" selected>Fixed Layout (Recommended for Comics)</option>
+          <option value="reflowable">Reflowable (Responsive Centered)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="opt-res">Max Image Resolution</label>
+        <select id="opt-res">
+          <option value="0" selected>Original Quality (Fastest, Lossless)</option>
+          <option value="1920">Max 1920px (Optimized for Kindle Oasis / Kobo)</option>
+          <option value="1440">Max 1440px (Standard 6" E-ink 300 PPI)</option>
+          <option value="1080">Max 1080px (Compact File Size)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="opt-color">Color Optimization</label>
+        <select id="opt-color">
+          <option value="original" selected>Preserve Original Colors</option>
+          <option value="grayscale">Grayscale (Optimized for E-ink)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drop Zone -->
+  <div class="dropzone" id="dropzone">
+    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+    <p><strong>Click to choose files</strong> or drag & drop multiple CBZ / CBR files here</p>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Supports batch files (.cbz, .cbr, .zip, .rar) • 100% private, no server upload</p>
+    <input type="file" id="file-input" multiple accept=".cbz,.cbr,.zip,.rar" style="display: none;" />
+  </div>
+
+  <!-- Action Controls -->
+  <div class="actions-bar">
+    <div class="actions-left">
+      <button class="btn" id="btn-convert" disabled>
+        <span>▶ Start Conversion</span>
+      </button>
+      <!-- Target Folder Export Button -->
+      <button class="btn btn-folder" id="btn-download-all" disabled title="Download all converted files into target folder">
+        <span>📁 Download All (Target Folder)</span>
+      </button>
+    </div>
+    <div class="actions-right">
+      <button class="btn btn-secondary" id="btn-clear" disabled>Clear Queue</button>
+    </div>
+  </div>
+
+  <!-- Queue Card -->
+  <div class="queue-container">
+    <div class="queue-header">
+      <span>File Queue</span>
+      <span id="queue-count" style="font-size: 0.85rem; color: var(--text-muted);">0 files</span>
+    </div>
+    <ul class="queue-list" id="queue-list">
+      <li class="empty-state">No files added yet. Drop your comics above to begin.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Metadata Editor Modal -->
+<div id="modal-metadata" class="modal-overlay" style="display: none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3>Comic Metadata Editor</h3>
+        <p id="modal-meta-filename" style="font-size: 0.75rem; color: var(--text-muted);"></p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeMetadataModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Status Notice -->
+      <div id="modal-status-notice" class="meta-banner warning"></div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label for="meta-input-title">Book Title *</label>
+        <input type="text" id="meta-input-title" required />
+      </div>
+
+      <!-- Series, Volume, Issue, Year -->
+      <div class="form-row">
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="meta-input-series">Series</label>
+            <button type="button" class="btn-copy-field" onclick="copyFieldToAll('series', 'Series')">Copy to all</button>
+          </div>
+          <input type="text" id="meta-input-series" placeholder="e.g. Batman - Year One" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="meta-input-volume">Volume</label>
+            <input type="text" id="meta-input-volume" placeholder="e.g. 1" />
+          </div>
+          <div class="form-group">
+            <label for="meta-input-number">Issue #</label>
+            <input type="text" id="meta-input-number" placeholder="e.g. 01" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Author & Publisher -->
+      <div class="form-row">
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="meta-input-writer">Author / Writer</label>
+            <button type="button" class="btn-copy-field" onclick="copyFieldToAll('writer', 'Author')">Copy to all</button>
+          </div>
+          <input type="text" id="meta-input-writer" placeholder="e.g. Frank Miller" />
+        </div>
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="meta-input-publisher">Publisher</label>
+            <button type="button" class="btn-copy-field" onclick="copyFieldToAll('publisher', 'Publisher')">Copy to all</button>
+          </div>
+          <input type="text" id="meta-input-publisher" placeholder="e.g. DC Comics, Marvel" />
+        </div>
+      </div>
+
+      <!-- Genre, Language, Year -->
+      <div class="form-row-3">
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="meta-input-genre">Genre</label>
+            <button type="button" class="btn-copy-field" onclick="copyFieldToAll('genre', 'Genre')">Copy to all</button>
+          </div>
+          <input type="text" id="meta-input-genre" placeholder="e.g. Superhero, Manga" />
+        </div>
+        <div class="form-group">
+          <div class="label-with-action">
+            <label for="meta-input-language">Language</label>
+            <button type="button" class="btn-copy-field" onclick="copyFieldToAll('language', 'Language')">Copy to all</button>
+          </div>
+          <select id="meta-input-language">
+            <option value="en">English (en)</option>
+            <option value="ja">Japanese (ja)</option>
+            <option value="fr">French (fr)</option>
+            <option value="de">German (de)</option>
+            <option value="es">Spanish (es)</option>
+            <option value="it">Italian (it)</option>
+            <option value="ko">Korean (ko)</option>
+            <option value="zh">Chinese (zh)</option>
+            <option value="pt">Portuguese (pt)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="meta-input-year">Year</label>
+          <input type="text" id="meta-input-year" placeholder="e.g. 1987" />
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="form-group">
+        <label for="meta-input-summary">Summary / Description (Optional)</label>
+        <textarea id="meta-input-summary" rows="2" placeholder="Brief summary of the comic..."></textarea>
+      </div>
+
+      <!-- Bulk Copy Box -->
+      <div id="modal-bulk-copy-box" class="bulk-copy-box" style="display: none;">
+        <span>Bulk propagate: Copy Author, Publisher, Language, and Genre to all books in queue.</span>
+        <button type="button" class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="copyAllCommonFields()">
+          Copy Common to All
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeMetadataModal()">Cancel</button>
+      <button type="button" class="btn" onclick="saveMetadataModal()">Save Metadata</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 1. Dark Mode Toggle implementation
+  const btnTheme = document.getElementById('btn-theme');
+  const themeIcon = document.getElementById('theme-icon');
+  const themeText = document.getElementById('theme-text');
+
+  function updateThemeUI(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      themeIcon.textContent = '🔆';
+      themeText.textContent = 'Light Mode';
+    } else {
+      themeIcon.textContent = '🌙';
+      themeText.textContent = 'Dark Mode';
+    }
+  }
+
+  // Initial theme
+  let currentTheme = localStorage.getItem('comic-converter-theme') || 'dark';
+  updateThemeUI(currentTheme);
+
+  btnTheme.addEventListener('click', () => {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('comic-converter-theme', currentTheme);
+    updateThemeUI(currentTheme);
+  });
+
+  function showToast(msg) {
+    const banner = document.getElementById('toast-banner');
+    const msgEl = document.getElementById('toast-msg');
+    msgEl.textContent = msg;
+    banner.style.display = 'flex';
+    setTimeout(() => { banner.style.display = 'none'; }, 6000);
+  }
+
+  // 2. Smart Filename Guesser
+  function guessMetadataFromFilename(filename) {
+    let raw = filename.replace(/\.(cbz|cbr|zip|rar)$/i, '').trim();
+
+    let year = '';
+    const yearMatch = raw.match(/\b(19\d\d|20\d\d)\b/);
+    if (yearMatch) {
+      year = yearMatch[1];
+    }
+
+    let language = 'en';
+    const langMap = {
+      'FR': 'fr', 'FRENCH': 'fr', 'FRANCAIS': 'fr',
+      'JA': 'ja', 'JAP': 'ja', 'JAPANESE': 'ja', 'RAW': 'ja',
+      'ES': 'es', 'SPANISH': 'es', 'ESP': 'es',
+      'DE': 'de', 'GERMAN': 'de', 'DEUTSCH': 'de',
+      'IT': 'it', 'ITALIAN': 'it',
+      'KO': 'ko', 'KOREAN': 'ko',
+      'ZH': 'zh', 'CHINESE': 'zh',
+      'PT': 'pt', 'BR': 'pt'
+    };
+    const bracketMatches = raw.match(/\[(.*?)\]|\((.*?)\)/g) || [];
+    for (const b of bracketMatches) {
+      const inner = b.replace(/[\[\]\(\)]/g, '').trim().toUpperCase();
+      if (langMap[inner]) {
+        language = langMap[inner];
+        break;
+      }
+    }
+
+    let publisher = '';
+    const publisherKeywords = ['Marvel', 'DC', 'DC Comics', 'Image', 'Dark Horse', 'IDW', 'Vertigo', 'Boom! Studios', 'Dynamite', 'Viz', 'Kodansha', 'Shueisha', 'Yen Press'];
+    for (const pub of publisherKeywords) {
+      const regex = new RegExp(`(^|[\\[\\(_\\-\\s])${pub}([\\]\\)_\\-\\s]|$)`, 'i');
+      if (regex.test(raw)) {
+        publisher = pub;
+        break;
+      }
+    }
+
+    let volume = '';
+    const volMatch = raw.match(/\b(?:v|vol|volume)[\.\s_-]*(\d+)\b/i);
+    if (volMatch) {
+      volume = volMatch[1];
+    }
+
+    let number = '';
+    const issueMatch = raw.match(/(?:#|c|ch|chapter|issue)[\.\s_-]*(\d+(?:\.\d+)?)\b/i);
+    if (issueMatch) {
+      number = issueMatch[1];
+    } else {
+      const trailingNumMatch = raw.match(/[-_\s](\d{1,4})(?:[-_\s\(\[]|$)/);
+      if (trailingNumMatch && trailingNumMatch[1] !== year) {
+        number = trailingNumMatch[1];
+      }
+    }
+
+    let genre = '';
+    if (/manga|shonen|shoujo|seinen|josei/i.test(raw)) {
+      genre = 'Manga';
+    } else if (/superhero|batman|superman|spider-man|x-men|avengers/i.test(raw)) {
+      genre = 'Superhero';
+    }
+
+    // Clean title
+    let clean = raw
+      .replace(/\[.*?\]/g, '')
+      .replace(/\((?:19|20)\d\d.*?\)/g, '')
+      .replace(/\(digital\)/gi, '')
+      .replace(/\b(?:c2c|novus|minutemen|nem|dcp)\b/gi, '')
+      .replace(/\b(?:v|vol|volume)[\.\s_-]*\d+\b/gi, '')
+      .replace(/(?:#|c|ch|chapter|issue)[\.\s_-]*\d+(?:\.\d+)?\b/gi, '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const series = clean || raw;
+    let title = series;
+    if (series && number) {
+      title = `${series} #${number}`;
+    } else if (series && volume) {
+      title = `${series} Vol. ${volume}`;
+    }
+
+    return {
+      title: title || raw,
+      series: series || raw,
+      volume,
+      number,
+      year,
+      language,
+      publisher,
+      writer: '',
+      genre
+    };
+  }
+
+  // 3. Queue & Converter
+  const fileQueue = [];
+  let currentEditingItem = null;
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const queueList = document.getElementById('queue-list');
+  const queueCount = document.getElementById('queue-count');
+  const btnConvert = document.getElementById('btn-convert');
+  const btnClear = document.getElementById('btn-clear');
+  const btnDownloadAll = document.getElementById('btn-download-all');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) handleFiles(e.target.files);
+  });
+
+  async function handleFiles(files) {
+    for (const file of files) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!['cbz', 'cbr', 'zip', 'rar'].includes(ext)) continue;
+      
+      const guessed = guessMetadataFromFilename(file.name);
+
+      const item = {
+        id: Math.random().toString(36).substring(2, 9),
+        file: file,
+        status: 'queued',
+        progress: 0,
+        epubBlob: null,
+        meta: {
+          title: guessed.title,
+          series: guessed.series,
+          number: guessed.number,
+          volume: guessed.volume,
+          writer: guessed.writer,
+          publisher: guessed.publisher,
+          year: guessed.year,
+          language: guessed.language,
+          genre: guessed.genre,
+          summary: '',
+          hasDetectedMetadata: false,
+          isCustomized: false,
+          outputFilename: `${guessed.title.replace(/[\/\\?%*:|"<>]/g, '_')}.epub`
+        },
+        coverUrl: null,
+        errorMsg: ''
+      };
+      fileQueue.push(item);
+
+      // Fast cover preview and metadata inspection
+      peekCoverAndMetadata(item);
+    }
+    renderQueue();
+  }
+
+  async function peekCoverAndMetadata(item) {
+    try {
+      const isZip = item.file.name.toLowerCase().endsWith('.cbz') || item.file.name.toLowerCase().endsWith('.zip');
+      if (isZip) {
+        const zip = await JSZip.loadAsync(item.file);
+        const names = Object.keys(zip.files).sort((a,b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        
+        // Check for ComicInfo.xml
+        const comicInfoName = names.find(n => n.toLowerCase().endsWith('comicinfo.xml'));
+        if (comicInfoName && !item.meta.isCustomized) {
+          const xmlText = await zip.files[comicInfoName].async('text');
+          const parsed = parseComicInfo(xmlText);
+          if (parsed) {
+            item.meta = {
+              ...item.meta,
+              ...parsed,
+              hasDetectedMetadata: true,
+              outputFilename: `${(parsed.title || item.meta.title).replace(/[\/\\?%*:|"<>]/g, '_')}.epub`
+            };
+          }
+        }
+
+        const imgName = names.find(n => !zip.files[n].dir && isImageFile(n));
+        if (imgName) {
+          const blob = await zip.files[imgName].async('blob');
+          item.coverUrl = URL.createObjectURL(blob);
+        }
+        renderQueue();
+      }
+    } catch(e) {
+      console.warn('Cover preview peek error:', e);
+    }
+  }
+
+  function renderQueue() {
+    queueCount.textContent = `${fileQueue.length} file${fileQueue.length === 1 ? '' : 's'}`;
+    const doneItems = fileQueue.filter(i => i.status === 'done');
+    btnConvert.disabled = fileQueue.length === 0 || fileQueue.every(i => i.status === 'done');
+    btnClear.disabled = fileQueue.length === 0;
+    btnDownloadAll.disabled = doneItems.length === 0;
+
+    if (fileQueue.length === 0) {
+      queueList.innerHTML = `<li class="empty-state">No files added yet. Drop your comics above to begin.</li>`;
+      return;
+    }
+
+    queueList.innerHTML = '';
+    fileQueue.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'queue-item';
+
+      let metaInfo = `${formatBytes(item.file.size)}`;
+      if (item.meta && item.meta.title) {
+        metaInfo += ` • Title: ${escapeHtml(item.meta.title)}`;
+      }
+      if (item.meta && item.meta.writer) {
+        metaInfo += ` • ${escapeHtml(item.meta.writer)}`;
+      }
+      if (item.meta && item.meta.pages) {
+        metaInfo += ` • ${item.meta.pages} pages`;
+      }
+      if (item.errorMsg) {
+        metaInfo += ` • <span style="color:var(--danger)">${escapeHtml(item.errorMsg)}</span>`;
+      }
+
+      const metaStatusLabel = item.meta.isCustomized
+        ? `<button type="button" class="meta-prompt-btn customized" onclick="openMetadataEditor('${item.id}')">✏️ Customized metadata · Edit</button>`
+        : !item.meta.hasDetectedMetadata
+        ? `<button type="button" class="meta-prompt-btn guessed" onclick="openMetadataEditor('${item.id}')">✨ Guessed from filename · Provide metadata</button>`
+        : `<button type="button" class="meta-prompt-btn detected" onclick="openMetadataEditor('${item.id}')">✏️ Edit metadata</button>`;
+
+      li.innerHTML = `
+        <div class="cover-thumb-container">
+          ${item.coverUrl ? `<img src="${item.coverUrl}" alt="Cover thumbnail" />` : `<span style="font-size:20px;">📖</span>`}
+          <span class="cover-badge">COVER</span>
+        </div>
+        <div class="item-body">
+          <div class="item-top">
+            <span class="file-name" title="${escapeHtml(item.file.name)}">${escapeHtml(item.file.name)}</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button type="button" class="btn-icon-action" onclick="openMetadataEditor('${item.id}')" title="Edit comic metadata">✏️ Edit</button>
+              <span class="status-badge status-${item.status}">${item.status}</span>
+              ${item.status === 'done' ? `<a class="btn-download" href="${URL.createObjectURL(item.epubBlob)}" download="${escapeHtml(item.meta.outputFilename)}">📥 Download</a>` : ''}
+            </div>
+          </div>
+          <div class="file-meta">${metaInfo}</div>
+          <div style="margin-top: 2px;">${metaStatusLabel}</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${item.progress}%"></div>
+          </div>
+        </div>
+      `;
+      queueList.appendChild(li);
+    });
+  }
+
+  btnClear.addEventListener('click', () => {
+    fileQueue.length = 0;
+    fileInput.value = '';
+    renderQueue();
+  });
+
+  btnConvert.addEventListener('click', async () => {
+    btnConvert.disabled = true;
+    for (const item of fileQueue) {
+      if (item.status === 'done') continue;
+      await processComic(item);
+    }
+    renderQueue();
+  });
+
+  // 4. Metadata Modal Actions
+  window.openMetadataEditor = function(id) {
+    const item = fileQueue.find(i => i.id === id);
+    if (!item) return;
+    currentEditingItem = item;
+
+    document.getElementById('modal-meta-filename').textContent = `File: ${item.file.name}`;
+    document.getElementById('meta-input-title').value = item.meta.title || '';
+    document.getElementById('meta-input-series').value = item.meta.series || '';
+    document.getElementById('meta-input-volume').value = item.meta.volume || '';
+    document.getElementById('meta-input-number').value = item.meta.number || '';
+    document.getElementById('meta-input-writer').value = item.meta.writer || '';
+    document.getElementById('meta-input-publisher').value = item.meta.publisher || '';
+    document.getElementById('meta-input-genre').value = item.meta.genre || '';
+    document.getElementById('meta-input-language').value = item.meta.language || 'en';
+    document.getElementById('meta-input-year').value = item.meta.year || '';
+    document.getElementById('meta-input-summary').value = item.meta.summary || '';
+
+    const noticeEl = document.getElementById('modal-status-notice');
+    if (!item.meta.hasDetectedMetadata) {
+      noticeEl.className = 'meta-banner warning';
+      noticeEl.innerHTML = `<strong>⚠️ No ComicInfo.xml detected in archive.</strong> Fields were prefilled with best guesses from the filename. You can edit any details below and copy common values to all books.`;
+    } else {
+      noticeEl.className = 'meta-banner info';
+      noticeEl.innerHTML = `<strong>✓ Metadata imported from embedded ComicInfo.xml.</strong> You can customize it below.`;
+    }
+
+    const bulkBox = document.getElementById('modal-bulk-copy-box');
+    bulkBox.style.display = fileQueue.length > 1 ? 'flex' : 'none';
+
+    document.getElementById('modal-metadata').style.display = 'flex';
+  };
+
+  window.closeMetadataModal = function() {
+    document.getElementById('modal-metadata').style.display = 'none';
+    currentEditingItem = null;
+  };
+
+  window.saveMetadataModal = function() {
+    if (!currentEditingItem) return;
+
+    const title = document.getElementById('meta-input-title').value.trim() || currentEditingItem.file.name.replace(/\.[^/.]+$/, '');
+    currentEditingItem.meta.title = title;
+    currentEditingItem.meta.series = document.getElementById('meta-input-series').value.trim();
+    currentEditingItem.meta.volume = document.getElementById('meta-input-volume').value.trim();
+    currentEditingItem.meta.number = document.getElementById('meta-input-number').value.trim();
+    currentEditingItem.meta.writer = document.getElementById('meta-input-writer').value.trim();
+    currentEditingItem.meta.publisher = document.getElementById('meta-input-publisher').value.trim();
+    currentEditingItem.meta.genre = document.getElementById('meta-input-genre').value.trim();
+    currentEditingItem.meta.language = document.getElementById('meta-input-language').value;
+    currentEditingItem.meta.year = document.getElementById('meta-input-year').value.trim();
+    currentEditingItem.meta.summary = document.getElementById('meta-input-summary').value.trim();
+    currentEditingItem.meta.outputFilename = `${title.replace(/[\/\\?%*:|"<>]/g, '_')}.epub`;
+    currentEditingItem.meta.isCustomized = true;
+
+    closeMetadataModal();
+    renderQueue();
+    showToast(`Saved metadata for "${title}".`);
+  };
+
+  window.copyFieldToAll = function(field, label) {
+    let inputId = `meta-input-${field}`;
+    const val = document.getElementById(inputId).value.trim();
+    if (!val) {
+      showToast(`Please enter a value for ${label} before copying.`);
+      return;
+    }
+
+    fileQueue.forEach(item => {
+      item.meta[field] = val;
+      item.meta.isCustomized = true;
+    });
+
+    renderQueue();
+    showToast(`✓ Copied ${label} ("${val}") to all ${fileQueue.length} books in queue!`);
+  };
+
+  window.copyAllCommonFields = function() {
+    const writer = document.getElementById('meta-input-writer').value.trim();
+    const publisher = document.getElementById('meta-input-publisher').value.trim();
+    const genre = document.getElementById('meta-input-genre').value.trim();
+    const language = document.getElementById('meta-input-language').value;
+
+    fileQueue.forEach(item => {
+      if (writer) item.meta.writer = writer;
+      if (publisher) item.meta.publisher = publisher;
+      if (genre) item.meta.genre = genre;
+      if (language) item.meta.language = language;
+      item.meta.isCustomized = true;
+    });
+
+    renderQueue();
+    showToast(`✓ Applied common fields (Author, Publisher, Language, Genre) to all ${fileQueue.length} books!`);
+  };
+
+  // 5. Download All Button: Target Folder & Zip fallback
+  btnDownloadAll.addEventListener('click', async () => {
+    const doneItems = fileQueue.filter(i => i.status === 'done' && i.epubBlob);
+    if (doneItems.length === 0) return;
+
+    btnDownloadAll.disabled = true;
+
+    // Check for File System Access API
+    if ('showDirectoryPicker' in window) {
+      try {
+        btnDownloadAll.textContent = '📁 Selecting Folder...';
+
+        const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        let saved = 0;
+
+        for (const item of doneItems) {
+          btnDownloadAll.textContent = `💾 Writing ${saved + 1}/${doneItems.length}...`;
+          const filename = item.meta.outputFilename;
+          const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(item.epubBlob);
+          await writable.close();
+          saved++;
+        }
+
+        showToast(`🎉 Successfully saved all ${saved} files directly into folder "${dirHandle.name}"!`);
+        btnDownloadAll.innerHTML = `<span>📁 Download All (Target Folder)</span>`;
+        btnDownloadAll.disabled = false;
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          btnDownloadAll.innerHTML = `<span>📁 Download All (Target Folder)</span>`;
+          btnDownloadAll.disabled = false;
+          return;
+        }
+        console.warn('showDirectoryPicker unavailable or error, falling back to folder archive packaging:', err);
+      }
+    }
+
+    // Firefox Android & mobile fallback
+    try {
+      btnDownloadAll.textContent = '📦 Packaging all files...';
+      const batchZip = new JSZip();
+      for (const item of doneItems) {
+        const filename = item.meta.outputFilename || `${item.file.name.replace(/\.[^/.]+$/, '')}.epub`;
+        batchZip.file(filename, item.epubBlob);
+      }
+
+      const zipBlob = await batchZip.generateAsync({ type: 'blob', compression: 'STORE' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(zipBlob);
+      a.download = doneItems.length === 1 ? doneItems[0].meta.outputFilename : 'Converted_Comics_Folder.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      }, 2000);
+
+      showToast(`🎉 All ${doneItems.length} files downloaded together in target folder archive "${a.download}"!`);
+    } catch (err) {
+      console.error(err);
+      showToast('Error packaging files: ' + err.message);
+    } finally {
+      btnDownloadAll.innerHTML = `<span>📁 Download All (Target Folder)</span>`;
+      btnDownloadAll.disabled = false;
+    }
+  });
+
+  // Main converter per file
+  async function processComic(item) {
+    item.status = 'processing';
+    item.progress = 10;
+    renderQueue();
+
+    const options = {
+      direction: document.getElementById('opt-direction').value,
+      layout: document.getElementById('opt-layout').value,
+      maxRes: parseInt(document.getElementById('opt-res').value, 10),
+      colorMode: document.getElementById('opt-color').value
+    };
+
+    try {
+      item.progress = 25;
+      renderQueue();
+      const extracted = await extractArchive(item.file);
+
+      if (extracted.images.length === 0) {
+        throw new Error("No comic pages/images found inside the archive.");
+      }
+
+      // Update cover thumbnail from extracted first image
+      if (!item.coverUrl && extracted.images.length > 0) {
+        item.coverUrl = URL.createObjectURL(extracted.images[0].blob);
+      }
+
+      item.progress = 45;
+      renderQueue();
+
+      // If comicInfo.xml is found and user has not customized, merge it
+      const comicInfo = extracted.comicInfoText ? parseComicInfo(extracted.comicInfoText) : null;
+      if (comicInfo && !item.meta.isCustomized) {
+        item.meta = {
+          ...item.meta,
+          ...comicInfo,
+          hasDetectedMetadata: true
+        };
+      }
+
+      item.meta.pages = extracted.images.length;
+
+      let finalDirection = options.direction;
+      if (finalDirection === 'auto') {
+        if (comicInfo && (comicInfo.manga === 'Yes' || comicInfo.manga === 'YesAndRightToLeft')) {
+          finalDirection = 'rtl';
+        } else if (item.meta.genre === 'Manga' || item.meta.language === 'ja') {
+          finalDirection = 'rtl';
+        } else {
+          finalDirection = 'ltr';
+        }
+      }
+
+      item.progress = 65;
+      renderQueue();
+
+      // Process pages
+      const processedImages = [];
+      for (let i = 0; i < extracted.images.length; i++) {
+        const img = extracted.images[i];
+        const processedBlob = await processImage(img.blob, options.maxRes, options.colorMode);
+        const dims = await getImageDimensions(processedBlob);
+        const isCover = (i === 0);
+        processedImages.push({
+          name: isCover ? 'cover.jpg' : `page_${String(i + 1).padStart(4, '0')}.jpg`,
+          blob: processedBlob,
+          width: dims.width,
+          height: dims.height,
+          isCover
+        });
+      }
+
+      // Build EPUB 3 with cover image as official cover and thumbnail
+      item.progress = 85;
+      renderQueue();
+
+      const epubZip = new JSZip();
+      epubZip.file("mimetype", "application/epub+zip", { compression: "STORE" });
+
+      epubZip.folder("META-INF").file("container.xml", 
+`<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>`);
+
+      const oebps = epubZip.folder("OEBPS");
+      const imagesFolder = oebps.folder("images");
+      const textFolder = oebps.folder("text");
+
+      oebps.file("style.css", `
+        @page { margin: 0; padding: 0; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000000; }
+        .comic-page { width: 100%; height: 100%; object-fit: contain; display: block; margin: auto; }
+      `);
+
+      let manifestItems = [
+        `<item id="style" href="style.css" media-type="text/css"/>`,
+        `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>`,
+        `<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>`
+      ];
+      let spineItems = [];
+      let navListItems = [];
+      let ncxNavPoints = [];
+
+      for (let i = 0; i < processedImages.length; i++) {
+        const img = processedImages[i];
+        const pageId = img.isCover ? 'cover' : `page_${i + 1}`;
+        const imgId = img.isCover ? 'cover-image' : `img_${i + 1}`;
+
+        imagesFolder.file(img.name, img.blob);
+
+        if (img.isCover) {
+          manifestItems.push(`<item id="${imgId}" href="images/${img.name}" media-type="image/jpeg" properties="cover-image"/>`);
+        } else {
+          manifestItems.push(`<item id="${imgId}" href="images/${img.name}" media-type="image/jpeg"/>`);
+        }
+
+        const pageXhtml = `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+  <meta charset="utf-8"/>
+  <title>${img.isCover ? 'Cover' : `Page ${i + 1}`}</title>
+  <meta name="viewport" content="width=${img.width}, height=${img.height}"/>
+  <link rel="stylesheet" type="text/css" href="../style.css"/>
+</head>
+<body style="margin:0;padding:0;">
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink"
+       width="100%" height="100%" viewBox="0 0 ${img.width} ${img.height}">
+    <image width="${img.width}" height="${img.height}" xlink:href="../images/${img.name}"/>
+  </svg>
+</body>
+</html>`;
+        textFolder.file(`${pageId}.xhtml`, pageXhtml);
+
+        manifestItems.push(`<item id="${pageId}" href="text/${pageId}.xhtml" media-type="application/xhtml+xml"/>`);
+        spineItems.push(`<itemref idref="${pageId}"/>`);
+
+        navListItems.push(`<li><a href="text/${pageId}.xhtml">${img.isCover ? 'Cover' : `Page ${i + 1}`}</a></li>`);
+        ncxNavPoints.push(`
+          <navPoint id="np_${i + 1}" playOrder="${i + 1}">
+            <navLabel><text>${img.isCover ? 'Cover' : `Page ${i + 1}`}</text></navLabel>
+            <content src="text/${pageId}.xhtml"/>
+          </navPoint>
+        `);
+      }
+
+      // EPUB 3 Navigation with landmarks
+      oebps.file("nav.xhtml", `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Navigation</title></head>
+<body>
+  <nav epub:type="toc" id="toc">
+    <h1>Table of Contents</h1>
+    <ol>${navListItems.join('\n')}</ol>
+  </nav>
+  <nav epub:type="landmarks" hidden="">
+    <ol>
+      <li><a epub:type="cover" href="text/cover.xhtml">Cover</a></li>
+    </ol>
+  </nav>
+</body>
+</html>`);
+
+      // Toc.ncx
+      oebps.file("toc.ncx", `<?xml version="1.0" encoding="utf-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta name="dtb:uid" content="urn:uuid:comic-${item.id}"/>
+    <meta name="dtb:depth" content="1"/>
+  </head>
+  <docTitle><text>${escapeXml(item.meta.title)}</text></docTitle>
+  <navMap>${ncxNavPoints.join('\n')}</navMap>
+</ncx>`);
+
+      // Content.opf
+      const opf = `<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="rendition: http://www.idpf.org/vocab/rendition/#">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="BookId">urn:uuid:comic-${item.id}</dc:identifier>
+    <dc:title>${escapeXml(item.meta.title)}</dc:title>
+    <dc:creator>${escapeXml(item.meta.writer || 'Unknown')}</dc:creator>
+    <dc:language>${escapeXml(item.meta.language || 'en')}</dc:language>
+    ${item.meta.publisher ? `<dc:publisher>${escapeXml(item.meta.publisher)}</dc:publisher>` : ''}
+    ${item.meta.genre ? `<dc:subject>${escapeXml(item.meta.genre)}</dc:subject>` : ''}
+    ${item.meta.year ? `<dc:date>${escapeXml(item.meta.year)}</dc:date>` : ''}
+    ${item.meta.summary ? `<dc:description>${escapeXml(item.meta.summary)}</dc:description>` : ''}
+    ${item.meta.series ? `
+    <meta property="belongs-to-collection" id="c01">${escapeXml(item.meta.series)}</meta>
+    <meta refines="#c01" property="collection-type">series</meta>
+    ${item.meta.number ? `<meta refines="#c01" property="group-position">${escapeXml(item.meta.number)}</meta>` : ''}
+    ` : ''}
+    <meta property="dcterms:modified">${new Date().toISOString().replace(/\.[0-9]+Z$/, 'Z')}</meta>
+    <!-- Cover Metadata for E-readers -->
+    <meta name="cover" content="cover-image"/>
+    <meta property="rendition:layout">${options.layout}</meta>
+    <meta property="rendition:orientation">auto</meta>
+    <meta property="rendition:spread">auto</meta>
+  </metadata>
+  <manifest>
+    ${manifestItems.join('\n    ')}
+  </manifest>
+  <spine toc="ncx" page-progression-direction="${finalDirection}">
+    ${spineItems.join('\n    ')}
+  </spine>
+  <guide>
+    <reference type="cover" title="Cover" href="text/cover.xhtml"/>
+  </guide>
+</package>`;
+      oebps.file("content.opf", opf);
+
+      item.epubBlob = await epubZip.generateAsync({
+        type: "blob",
+        mimeType: "application/epub+zip",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+      });
+
+      item.status = 'done';
+      item.progress = 100;
+    } catch (err) {
+      console.error(err);
+      item.status = 'error';
+      item.errorMsg = err.message || 'Conversion error';
+    }
+    renderQueue();
+  }
+
+  // Universal Archive Extractor
+  async function extractArchive(file) {
+    const images = [];
+    let comicInfoText = null;
+
+    const isZip = file.name.toLowerCase().endsWith('.cbz') || file.name.toLowerCase().endsWith('.zip');
+
+    if (isZip) {
+      try {
+        const zip = await JSZip.loadAsync(file);
+        const entries = Object.keys(zip.files).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+        for (const filename of entries) {
+          const zipEntry = zip.files[filename];
+          if (zipEntry.dir || filename.includes('__MACOSX')) continue;
+
+          if (filename.toLowerCase().endsWith('comicinfo.xml')) {
+            comicInfoText = await zipEntry.async('text');
+          } else if (isImageFile(filename)) {
+            const blob = await zipEntry.async('blob');
+            images.push({ filename, blob });
+          }
+        }
+        return { images, comicInfoText };
+      } catch (err) {
+        console.warn("JSZip fallback to Unarchiver:", err);
+      }
+    }
+
+    const archive = await Unarchiver.open(file);
+    const sortedEntries = archive.entries
+      .filter(e => e.is_file && !e.name.includes('__MACOSX'))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+
+    for (const entry of sortedEntries) {
+      if (entry.name.toLowerCase().endsWith('comicinfo.xml')) {
+        const blob = await entry.read();
+        comicInfoText = await blob.text();
+      } else if (isImageFile(entry.name)) {
+        const blob = await entry.read();
+        images.push({ filename: entry.name, blob });
+      }
+    }
+
+    return { images, comicInfoText };
+  }
+
+  function isImageFile(filename) {
+    return /\.(jpe?g|png|webp|gif|avif)$/i.test(filename);
+  }
+
+  function parseComicInfo(xmlText) {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+      const getVal = (tag) => xmlDoc.querySelector(tag)?.textContent?.trim() || "";
+
+      let title = getVal("Title");
+      const series = getVal("Series");
+      const number = getVal("Number");
+      const volume = getVal("Volume");
+      const year = getVal("Year");
+      const genre = getVal("Genre");
+
+      if (series && number) {
+        title = `${series} #${number}${title ? ' - ' + title : ''}`;
+      } else if (series) {
+        title = series;
+      }
+
+      return {
+        title: title,
+        series: series,
+        volume: volume,
+        number: number,
+        year: year,
+        genre: genre,
+        writer: getVal("Writer") || getVal("Penciller"),
+        publisher: getVal("Publisher"),
+        summary: getVal("Summary"),
+        manga: getVal("Manga"),
+        language: getVal("LanguageISO") || 'en'
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function getImageDimensions(blob) {
+    if (typeof createImageBitmap === 'function') {
+      try {
+        const bmp = await createImageBitmap(blob);
+        const dims = { width: bmp.width, height: bmp.height };
+        bmp.close();
+        return dims;
+      } catch (e) {}
+    }
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: img.naturalWidth || 1200, height: img.naturalHeight || 1600 });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: 1200, height: 1600 });
+      };
+      img.src = url;
+    });
+  }
+
+  async function processImage(blob, maxRes, colorMode) {
+    if (maxRes === 0 && colorMode === 'original') return blob;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+
+        if (maxRes > 0 && (w > maxRes || h > maxRes)) {
+          if (w > h) {
+            h = Math.round((h * maxRes) / w);
+            w = maxRes;
+          } else {
+            w = Math.round((w * maxRes) / h);
+            h = maxRes;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (colorMode === 'grayscale') {
+          ctx.filter = 'grayscale(100%)';
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((resultBlob) => {
+          resolve(resultBlob || blob);
+        }, 'image/jpeg', 0.85);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(blob);
+      };
+      img.src = url;
+    });
+  }
+
+  function escapeXml(str) {
+    return (str || '').replace(/[<>&'"]/g, c => {
+      switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '\'': return '&apos;';
+        case '"': return '&quot;';
+      }
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024, dm = 1;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+</script>
+</body>
+</html>
