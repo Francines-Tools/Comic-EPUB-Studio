@@ -368,9 +368,11 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-8">
           {/* Zone 1: Single text element wordmark */}
           <div className="flex items-center gap-2.5 whitespace-nowrap shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
-              <BookOpen className="h-4 w-4" />
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="Comic to EPUB Studio logo"
+              className="h-8 w-8 rounded-lg shadow-xs shrink-0"
+            />
             <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Comic to EPUB Studio
             </span>
